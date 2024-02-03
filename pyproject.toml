@@ -9,6 +9,8 @@ readme = "README.md"
 python = "^3.11"
 python-dotenv = "^1.0.1"
 telethon = "^1.33.1"
+pytz = "^2024.1"
+pytelegrambotapi = "^4.15.4"
 
 
 [build-system]
