@@ -9,3 +9,4 @@ key_words = ['биржа', 'фриланс', 'заказ', 'сайт', 'рекл
 
 # файл для хранения списка вакансий
 file_data_json = os.path.abspath('./channels.json')
+

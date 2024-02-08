@@ -93,4 +93,11 @@ def cleaning_data(file_data, words_list):
     writing_json(file_data, channels_list_new)  # сохраняем новый список каналов в файл в формате json
 
 
+def writing_txt(file_name, downloaded_file):
+    """ Записывает скачанный файл в файл с указанным именем """
+
+    with open(file_name, 'wb') as new_file:
+        new_file.write(downloaded_file)
+
+
 cleaning_data(file_data_json, stop_words)
