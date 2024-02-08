@@ -84,19 +84,21 @@ def start_bot(message):
 
     if message.text == '/search':
 
-        bot.send_message(message.chat.id, 'Ожидайте, идет поиск...')
+        chat_id = message.chat.id  # получаем id чата
+
+        bot.send_message(chat_id, 'Ожидайте, идет поиск...')
 
         # запускается поиск Telegram каналов
-        new_channels = get_channels()
+        new_channels = get_channels(chat_id)
 
-        bot.send_message(message.chat.id, f'Найдено {new_channels} новых каналов')
+        bot.send_message(chat_id, f'Найдено {new_channels} новых каналов')
 
 
 @bot.message_handler(content_types=['document'])
 def receive_document_from_bot(message):
     """ Сохранение файла с ключевыми словами в формате txt, который передал пользователь """
 
-    chat_id = message.chat.id
+    chat_id = message.chat.id  # получаем id чата
 
     # получаем информацию о файле, переданном пользователем
     file_info = bot.get_file(message.document.file_id)
@@ -107,7 +109,7 @@ def receive_document_from_bot(message):
     if message.caption == '1':  # проверяем описание файла
 
         # задаем путь к файлу с данными
-        file_name = os.path.abspath(f'./searching_words_channels_chat_id_{chat_id}.txt')
+        file_name = os.path.abspath(f'./data_dir/searching_words_channels_chat_id_{chat_id}.txt')
 
         # сохраняем файл с ключевыми словами
         writing_txt(file_name, downloaded_file)
@@ -118,7 +120,7 @@ def receive_document_from_bot(message):
     if message.caption == '2':  # проверяем описание файла
 
         # задаем путь к файлу с данными
-        file_name = os.path.abspath(f'./searching_words_messages_chat_id_{chat_id}.txt')
+        file_name = os.path.abspath(f'./data_dir/searching_words_messages_chat_id_{chat_id}.txt')
 
         # сохраняем файл с ключевыми словами
         writing_txt(file_name, downloaded_file)
@@ -126,7 +128,7 @@ def receive_document_from_bot(message):
         # выводим сообщение, что файл сохранен
         bot.reply_to(message, "Файл с ключевыми словами для поиска сообщений сохранен")
 
-    else:
+    if message.caption not in ['1', '2']:
         bot.send_message(message.chat.id, 'Файл не получен, вероятно вы где-то ошиблись')
 
 

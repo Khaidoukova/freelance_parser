@@ -1,4 +1,5 @@
 import json
+import os
 from random import randint
 import pytz
 import datetime
@@ -100,4 +101,29 @@ def writing_txt(file_name, downloaded_file):
         new_file.write(downloaded_file)
 
 
-cleaning_data(file_data_json, stop_words)
+def reading_txt(file_data):
+    """ Считывает данные из файла txt """
+
+    try:
+        with open(file_data, 'r') as file:
+            keywords = file.read().splitlines()
+        return keywords
+    except FileNotFoundError:
+        print('Файла пока не существует, проверьте данные')
+        keywords = []
+        return keywords
+
+
+def get_file_channels_json(chat_id):
+    """
+    Получает имя файла хранения каналов
+    :param chat_id: id чата с ботом
+    :return:
+    """
+
+    file_channels_json = os.path.abspath(f'./data_dir/channels_chat_id_{chat_id}.json')
+
+    return file_channels_json
+
+
+# cleaning_data(file_data_json, stop_words)
