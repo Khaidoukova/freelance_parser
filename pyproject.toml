@@ -11,6 +11,7 @@ python-dotenv = "^1.0.1"
 telethon = "^1.33.1"
 pytz = "^2024.1"
 pytelegrambotapi = "^4.15.4"
+python-telegram-bot-pagination = "^0.0.3"
 
 
 [build-system]

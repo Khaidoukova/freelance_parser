@@ -2,10 +2,12 @@ import os
 
 import telebot
 from telebot import types
+from telebot.types import InlineKeyboardButton
+from telegram_bot_pagination import InlineKeyboardPaginator
 from dotenv import load_dotenv
 
 from channels import get_channels
-
+from datas import stop_words
 from services import writing_txt
 
 load_dotenv('.env')  # загружаем данные из виртуального окружения
@@ -14,39 +16,7 @@ bot_token = os.getenv('TELEGRAM_ACCESS_TOKEN')  # получаем токен б
 
 bot = telebot.TeleBot(bot_token)  # создаем бота
 
-
-# @bot.message_handler(commands=['start'])
-# def start_bot(massage):
-#
-#
-#     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)  # создаем клавиатуру бота
-#     button_1 = types.KeyboardButton('Старт')  # создаем кнопку
-#     button_2 = types.KeyboardButton('Инфо')  # создаем кнопку
-#     markup.add(button_1, button_2)  # добавляем кнопки в клавиатуру бота
-#
-#     # отправляем в бот приветствие и запускам клавиатуру
-#     bot.send_message(massage.chat.id, 'Привет, {0.first_name}!'.format(massage.from_user), reply_markup=markup)
-
-
-# @bot.message_handler(content_types=['text'])
-# def bot_massage(massage):
-#     """ Функция работы меню бота """
-#
-#     # если в меню бота нажать кнопку "Инфо"
-#     if massage.text == 'info':
-#         # отправляется сообщение с ником пользователя
-#         bot.send_message(massage.chat.id, 'Твой ник: @{0.username}'.format(massage.from_user))
-#
-#     # если в меню бота нажать кнопку "Старт"
-#     elif massage.text == 'search':
-#         bot.send_message(massage.chat.id, 'Ожидайте, идет поиск...')
-#
-#         # запускается поиск Telegram каналов
-#         new_channels = get_channels()
-#
-#         bot.send_message(massage.chat.id, f'Найдено {new_channels} новых каналов')
-#         # bot.send_message(massage.chat.id, 'Привет, {0.first_name}!'.format(massage.from_user))
-
+character_pages = ['биржа', 'фриланс', 'заказ', 'сайт', 'реклама', 'удаленно', 'сделать']
 
 # --------------- эта часть кода запускается один раз для формирования меню ----------------
 
@@ -65,7 +35,8 @@ bot = telebot.TeleBot(bot_token)  # создаем бота
 
 # ----------------------------------- конец блока -------------------------------------------
 
-@bot.message_handler(commands=['start', 'info', 'search'])
+
+@bot.message_handler(commands=['start', 'search'])
 def start_bot(message):
 
     if message.text == '/start':
@@ -78,9 +49,9 @@ def start_bot(message):
                                           'отправьте боту сообщение с текстом "2" и '
                                           'прикрепите файл в формате txt со списком ключевых слов.')
 
-    if message.text == '/info':
-        # отправляем в бот приветствие и запускам клавиатуру
-        bot.send_message(message.chat.id, 'Твой ник: @{0.username}'.format(message.from_user))
+    # if message.text == '/info':
+    #     # отправляем в бот приветствие и запускам клавиатуру
+    #     bot.send_message(message.chat.id, 'Твой ник: @{0.username}'.format(message.from_user))
 
     if message.text == '/search':
 
@@ -92,6 +63,51 @@ def start_bot(message):
         new_channels = get_channels(chat_id)
 
         bot.send_message(chat_id, f'Найдено {new_channels} новых каналов')
+
+
+@bot.message_handler(commands=['info'])
+def get_messages_menu(message):
+    if message.text == '/info':
+        get_messages(message)
+
+
+@bot.message_handler(func=lambda message: True)
+def get_messages(message):
+    send_message_page(message)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.split('#')[0] == 'message')
+def messages_page_callback(call):
+    page = int(call.data.split('#')[1])
+    bot.delete_message(
+        call.message.chat.id,
+        call.message.message_id
+    )
+    send_message_page(call.message, page)
+
+
+def send_message_page(message, page=1):
+
+    messages_list = stop_words
+
+    paginator = InlineKeyboardPaginator(
+        len(messages_list),
+        current_page=page,
+        data_pattern='message#{page}'
+    )
+
+    # paginator.add_before(
+    #     InlineKeyboardButton('Like', callback_data='like#{}'.format(page)),
+    #     InlineKeyboardButton('Dislike', callback_data='dislike#{}'.format(page))
+    # )
+    # paginator.add_after(InlineKeyboardButton('Go back', callback_data='back'))
+
+    bot.send_message(
+        message.chat.id,
+        messages_list[page-1],
+        reply_markup=paginator.markup,
+        parse_mode='Markdown'
+    )
 
 
 @bot.message_handler(content_types=['document'])

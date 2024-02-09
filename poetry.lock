@@ -182,6 +182,16 @@ files = [
 cli = ["click (>=5.0)"]
 
 [[package]]
+name = "python-telegram-bot-pagination"
+version = "0.0.3"
+description = "Python inline keyboard pagination for Telegram Bot API"
+optional = false
+python-versions = "*"
+files = [
+    {file = "python-telegram-bot-pagination-0.0.3.tar.gz", hash = "sha256:15305e9faea6b33956f016f7c064adabc0e450142a7be33286c6f8d5fbbcdd49"},
+]
+
+[[package]]
 name = "pytz"
 version = "2024.1"
 description = "World timezone definitions, modern and historical"
@@ -264,4 +274,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "56886e578ca68dc3d670c7d7a51d54e8375cdec929a91837be8e5b4c9f9496e5"
+content-hash = "c71d20ba9da442e58f312fccf1c8691abb37ead6401624ed0d436af95887ff3b"
