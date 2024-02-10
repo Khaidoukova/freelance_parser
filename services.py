@@ -7,11 +7,11 @@ import datetime
 from datas import file_data_json, stop_words
 
 
-def writing_json(file_data, channels_list):
+def writing_json(file_data, data_list):
     """ Записывает данные в формате json """
 
     with open(file_data, 'w', encoding='utf-8') as file:
-        json.dump(channels_list, file, sort_keys=False, indent=4, ensure_ascii=False)
+        json.dump(data_list, file, sort_keys=False, indent=4, ensure_ascii=False)
 
 
 def reading_json(file_data):
@@ -19,12 +19,12 @@ def reading_json(file_data):
 
     try:
         with open(file_data, 'r', encoding='utf-8') as file:
-            channels = json.load(file)
-        return channels
+            data_list = json.load(file)
+        return data_list
     except FileNotFoundError:
         print('Файла пока не существует, будет создан новый файл')
-        channels = []
-        return channels
+        data_list = []
+        return data_list
 
 
 def number_generator(list_len):
@@ -102,7 +102,7 @@ def writing_txt(file_name, downloaded_file):
 
 
 def reading_txt(file_data):
-    """ Считывает данные из файла txt """
+    """ Считывает ключевые слова из файла txt """
 
     try:
         with open(file_data, 'r') as file:
@@ -112,18 +112,6 @@ def reading_txt(file_data):
         print('Файла пока не существует, проверьте данные')
         keywords = []
         return keywords
-
-
-def get_file_channels_json(chat_id):
-    """
-    Получает имя файла хранения каналов
-    :param chat_id: id чата с ботом
-    :return:
-    """
-
-    file_channels_json = os.path.abspath(f'./data_dir/channels_chat_id_{chat_id}.json')
-
-    return file_channels_json
 
 
 # cleaning_data(file_data_json, stop_words)

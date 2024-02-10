@@ -16,7 +16,8 @@ bot_token = os.getenv('TELEGRAM_ACCESS_TOKEN')  # получаем токен б
 
 bot = telebot.TeleBot(bot_token)  # создаем бота
 
-character_pages = ['биржа', 'фриланс', 'заказ', 'сайт', 'реклама', 'удаленно', 'сделать']
+# character_pages = ['биржа', 'фриланс', 'заказ', 'сайт', 'реклама', 'удаленно', 'сделать']
+
 
 # --------------- эта часть кода запускается один раз для формирования меню ----------------
 
@@ -88,6 +89,7 @@ def messages_page_callback(call):
 
 def send_message_page(message, page=1):
 
+    # data_list =
     messages_list = stop_words
 
     paginator = InlineKeyboardPaginator(

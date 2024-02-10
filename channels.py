@@ -7,8 +7,7 @@ from dotenv import load_dotenv
 import os
 
 from datas import stop_words
-from services import writing_json, reading_json, get_key_phrase, get_days_difference, reading_txt, \
-    get_file_channels_json
+from services import writing_json, reading_json, get_key_phrase, get_days_difference, reading_txt
 
 load_dotenv('.env')  # загружаем данные из виртуального окружения
 
@@ -29,7 +28,7 @@ def get_channels(chat_id):
     """
 
     # получаем путь к файлу, в котором хранятся каналы
-    file_channels_json = get_file_channels_json(chat_id)
+    file_channels_json = os.path.abspath(f'./data_dir/channels_chat_id_{chat_id}.json')
 
     channels_list = reading_json(file_channels_json)  # получаем список каналов из файла хранения
     len_channels_list_start = len(channels_list)  # определяем начальное количество каналов
@@ -38,11 +37,15 @@ def get_channels(chat_id):
     loop = asyncio.new_event_loop()  # создаем новый цикл событий
     asyncio.set_event_loop(loop)  # устанавливаем цикл событий
 
+    iter_number = 2  # задаем количество циклов поиска каналов
+
     # запускаем цикл поиска каналов, количество итераций можно изменить
-    for i in range(2):
+    for i in range(iter_number):
         loop.run_until_complete(get_channels_by_keyword(chat_id))  # запускаем цикл событий
-        print('----- ожидайте -----')
-        time.sleep(20)
+
+        if i < iter_number - 1:
+            print('----- ожидайте -----')
+            time.sleep(20)
 
     channels_list = reading_json(file_channels_json)  # получаем список каналов из файла хранения
     len_channels_list_end = len(channels_list)  # определяем конечное количество каналов
@@ -85,7 +88,7 @@ async def get_channels_by_keyword(chat_id):
         print(f"Найдено каналов: {len(chat_list)}")
 
         # получаем путь к файлу, в котором хранятся каналы
-        file_channels_json = get_file_channels_json(chat_id)
+        file_channels_json = os.path.abspath(f'./data_dir/channels_chat_id_{chat_id}.json')
 
         # получаем список каналов из файла хранения
         # если файла еще не существует, будет создан пустой список
@@ -131,3 +134,6 @@ async def get_channels_by_keyword(chat_id):
         print('Список ключевых слов отсутствует')
 
     await client.disconnect()
+
+
+# get_channels(876689099)
