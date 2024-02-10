@@ -86,6 +86,8 @@ def get_messages(chat_id):
 
     writing_json(result_file, messages_list)  # сохраняем список каналов в файл в формате json
 
+    time.sleep(2)
+
 
 async def search_messages(channel, keywords, offset_date, offset_file):
     """

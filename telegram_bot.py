@@ -1,14 +1,13 @@
 import os
 
 import telebot
-from telebot import types
-from telebot.types import InlineKeyboardButton
+
 from telegram_bot_pagination import InlineKeyboardPaginator
 from dotenv import load_dotenv
 
 from channels import get_channels
-from datas import stop_words
-from services import writing_txt
+from messages import get_messages
+from services import writing_txt, reading_json
 
 load_dotenv('.env')  # загружаем данные из виртуального окружения
 
@@ -62,32 +61,51 @@ def start_bot(message):
 
 @bot.message_handler(commands=['messages'])
 def get_messages_menu(message):
+    """ Обработчик команды поиска сообщений """
+
     if message.text == '/messages':
 
         chat_id = message.chat.id  # получаем id чата
 
-        display_messages(message)
+        bot.send_message(chat_id, 'Начинаю поиск новых сообщений\nОжидайте ...')
+
+        get_messages(chat_id)  # запускаем поиск сообщений
+
+        display_messages(message)  # Запускаем вывод сообщений в чат
 
 
 @bot.message_handler(func=lambda message: True)
 def display_messages(message):
+    """ Вывод сообщений в чат """
+
     send_message_page(message)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.split('#')[0] == 'message')
 def messages_page_callback(call):
+    """ Обработчик кнопок с пагинацией """
+
     page = int(call.data.split('#')[1])
     bot.delete_message(
         call.message.chat.id,
         call.message.message_id
     )
-    send_message_page(call.message, page)
+
+    send_message_page(call.message, page)  # выводим сообщения в чат
 
 
 def send_message_page(message, page=1):
+    """ Вывод сообщений в чат с пагинацией """
 
-    # data_list =
-    messages_list = stop_words
+    chat_id = message.chat.id  # получаем id чата
+
+    # получаем путь к файлу, в котором хранятся каналы
+    file_messages_json = os.path.abspath(f'./data_dir/result_messages_chat_id_{chat_id}.json')
+
+    messages = reading_json(file_messages_json)  # получаем список сообщений из файла хранения
+
+    # собираем текст сообщений в список
+    messages_list = [message['message'] for message in messages]
 
     paginator = InlineKeyboardPaginator(
         len(messages_list),
@@ -101,12 +119,15 @@ def send_message_page(message, page=1):
     # )
     # paginator.add_after(InlineKeyboardButton('Go back', callback_data='back'))
 
-    bot.send_message(
-        message.chat.id,
-        messages_list[page-1],
-        reply_markup=paginator.markup,
-        parse_mode='Markdown'
-    )
+    try:
+        bot.send_message(
+            message.chat.id,
+            messages_list[page-1],
+            reply_markup=paginator.markup,
+            parse_mode='Markdown'
+        )
+    except IndexError:
+        bot.send_message(chat_id, 'Новых сообщений нет')
 
 
 @bot.message_handler(content_types=['document'])

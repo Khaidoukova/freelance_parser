@@ -1,10 +1,8 @@
 import json
-import os
+
 from random import randint
 import pytz
 import datetime
-
-from datas import file_data_json, stop_words
 
 
 def writing_json(file_data, data_list):

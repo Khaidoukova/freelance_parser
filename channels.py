@@ -14,7 +14,6 @@ load_dotenv('.env')  # загружаем данные из виртуально
 api_id = os.getenv('TELEGRAM_API_ID')  # получаем api_id, полученный у Telegram
 api_hash = os.getenv('TELEGRAM_API_HASH')  # получаем api_hash, полученный у Telegram
 username = os.getenv('TELEGRAM_USERNAME')  # получаем имя пользователя для задания имени файла сессии
-key_word = 'gurienomika'
 
 # Создаем клиент Telegram
 client = TelegramClient(username, api_id, api_hash)
