@@ -16,8 +16,6 @@ bot_token = os.getenv('TELEGRAM_ACCESS_TOKEN')  # получаем токен б
 
 bot = telebot.TeleBot(bot_token)  # создаем бота
 
-# character_pages = ['биржа', 'фриланс', 'заказ', 'сайт', 'реклама', 'удаленно', 'сделать']
-
 
 # --------------- эта часть кода запускается один раз для формирования меню ----------------
 
@@ -29,15 +27,15 @@ bot = telebot.TeleBot(bot_token)  # создаем бота
 #
 #
 # bot.set_my_commands([
-#     telebot.types.BotCommand("start", "Перезапуск бота"),
-#     telebot.types.BotCommand("info", "Инфо"),
-#     telebot.types.BotCommand("search", "Запуск поиска каналов")
+#     telebot.types.BotCommand("start", "Запуск бота"),
+#     telebot.types.BotCommand("messages", "Поиск сообщений"),
+#     telebot.types.BotCommand("channels", "Поиск каналов")
 # ])
 
 # ----------------------------------- конец блока -------------------------------------------
 
 
-@bot.message_handler(commands=['start', 'search'])
+@bot.message_handler(commands=['start', 'channels'])
 def start_bot(message):
 
     if message.text == '/start':
@@ -50,11 +48,7 @@ def start_bot(message):
                                           'отправьте боту сообщение с текстом "2" и '
                                           'прикрепите файл в формате txt со списком ключевых слов.')
 
-    # if message.text == '/info':
-    #     # отправляем в бот приветствие и запускам клавиатуру
-    #     bot.send_message(message.chat.id, 'Твой ник: @{0.username}'.format(message.from_user))
-
-    if message.text == '/search':
+    if message.text == '/channels':
 
         chat_id = message.chat.id  # получаем id чата
 
@@ -66,14 +60,17 @@ def start_bot(message):
         bot.send_message(chat_id, f'Найдено {new_channels} новых каналов')
 
 
-@bot.message_handler(commands=['info'])
+@bot.message_handler(commands=['messages'])
 def get_messages_menu(message):
-    if message.text == '/info':
-        get_messages(message)
+    if message.text == '/messages':
+
+        chat_id = message.chat.id  # получаем id чата
+
+        display_messages(message)
 
 
 @bot.message_handler(func=lambda message: True)
-def get_messages(message):
+def display_messages(message):
     send_message_page(message)
 
 
