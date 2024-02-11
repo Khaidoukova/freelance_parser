@@ -17,6 +17,7 @@ bot = telebot.TeleBot(bot_token)  # создаем бота
 
 
 # --------------- эта часть кода запускается один раз для формирования меню ----------------
+# -----------------после запуска кода остановить бот, закомментировать код -----------------
 
 # @bot.message_handler()
 # def send_welcome(message: telebot.types.Message):
@@ -27,6 +28,7 @@ bot = telebot.TeleBot(bot_token)  # создаем бота
 #
 # bot.set_my_commands([
 #     telebot.types.BotCommand("start", "Запуск бота"),
+#     telebot.types.BotCommand("display", "Вывести последние сообщения"),
 #     telebot.types.BotCommand("messages", "Поиск сообщений"),
 #     telebot.types.BotCommand("channels", "Поиск каналов")
 # ])
@@ -40,12 +42,14 @@ def start_bot(message):
     if message.text == '/start':
         # отправляем в бот приветствие и запускам клавиатуру
         bot.send_message(message.chat.id, 'Привет, {0.first_name}!'.format(message.from_user))
-        bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска каналов, '
-                                          'отправьте боту сообщение с текстом "1" и '
-                                          'прикрепите файл в формате txt со списком ключевых слов.')
-        bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска сообщений, '
-                                          'отправьте боту сообщение с текстом "2" и '
-                                          'прикрепите файл в формате txt со списком ключевых слов.')
+        bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска каналов,\n'
+                                          'отправьте боту файл в формате txt со списком ключевых слов.\n'
+                                          'Каждое слово должно быть на новой строке.\n'
+                                          'В описании файла поставьте цифру "1"')
+        bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска сообщений,\n'
+                                          'отправьте боту файл в формате txt со списком ключевых слов.\n'
+                                          'Каждое слово должно быть на новой строке.\n'
+                                          'В описании файла поставьте цифру "2"')
 
     if message.text == '/channels':
 
@@ -60,7 +64,7 @@ def start_bot(message):
 
 
 @bot.message_handler(commands=['messages'])
-def get_messages_menu(message):
+def get_messages(message):
     """ Обработчик команды поиска сообщений """
 
     if message.text == '/messages':
@@ -69,13 +73,22 @@ def get_messages_menu(message):
 
         bot.send_message(chat_id, 'Начинаю поиск новых сообщений\nОжидайте ...')
 
-        get_messages(chat_id)  # запускаем поиск сообщений
+        messages_number = get_messages(chat_id)  # запускаем поиск сообщений
 
-        display_messages(message)  # Запускаем вывод сообщений в чат
+        bot.send_message(chat_id, f'Найдено {messages_number} новых сообщений')
+
+
+@bot.message_handler(commands=['display'])
+def display_messages(message):
+    """ Обработчик команды вывода сообщений """
+
+    if message.text == '/display':
+
+        send_messages(message)  # Запускаем вывод сообщений в чат
 
 
 @bot.message_handler(func=lambda message: True)
-def display_messages(message):
+def send_messages(message):
     """ Вывод сообщений в чат """
 
     send_message_page(message)
@@ -168,4 +181,5 @@ def receive_document_from_bot(message):
         bot.send_message(message.chat.id, 'Файл не получен, вероятно вы где-то ошиблись')
 
 
-bot.polling(non_stop=True)  # команда, чтобы бот не отключался
+# bot.polling(non_stop=True)  # команда, чтобы бот не отключался
+bot.infinity_polling()  # команда, чтобы бот не отключался

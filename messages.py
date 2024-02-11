@@ -81,12 +81,15 @@ def get_messages(chat_id):
         messages_list.extend(messages_in_channel)
 
         if iter_number > 0:
-            print('----- ожидайте -----')
+            print(f'----- ожидайте ----- {iter_number}')
             time.sleep(20)
 
-    writing_json(result_file, messages_list)  # сохраняем список каналов в файл в формате json
+    writing_json(result_file, messages_list)  # сохраняем список сообщений в файл в формате json
+    print('Поиск закончен')
 
     time.sleep(2)
+
+    return len(messages_list)
 
 
 async def search_messages(channel, keywords, offset_date, offset_file):

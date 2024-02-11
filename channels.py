@@ -29,18 +29,20 @@ def get_channels(chat_id):
     # получаем путь к файлу, в котором хранятся каналы
     file_channels_json = os.path.abspath(f'./data_dir/channels_chat_id_{chat_id}.json')
 
-    channels_list = reading_json(file_channels_json)  # получаем список каналов из файла хранения
+    # получаем список каналов из файла хранения
+    # если файла еще не существует, будет создан пустой список
+    channels_list = reading_json(file_channels_json)
     len_channels_list_start = len(channels_list)  # определяем начальное количество каналов
 
     # loop = asyncio.get_event_loop()  # получаем текущий цикл событий
     loop = asyncio.new_event_loop()  # создаем новый цикл событий
     asyncio.set_event_loop(loop)  # устанавливаем цикл событий
 
-    iter_number = 2  # задаем количество циклов поиска каналов
+    iter_number = 1  # задаем количество циклов поиска каналов
 
     # запускаем цикл поиска каналов, количество итераций можно изменить
     for i in range(iter_number):
-        loop.run_until_complete(get_channels_by_keyword(chat_id))  # запускаем цикл событий
+        loop.run_until_complete(get_channels_by_keyword(chat_id, channels_list))  # запускаем цикл событий
 
         if i < iter_number - 1:
             print('----- ожидайте -----')
@@ -57,9 +59,10 @@ def get_channels(chat_id):
     return len_difference
 
 
-async def get_channels_by_keyword(chat_id):
+async def get_channels_by_keyword(chat_id, channels_list):
     """
     Функция поиска каналов по ключевым словам
+    :param channels_list: список каналов
     :param chat_id: id чата бота с пользователем
     :return:
     """
@@ -69,63 +72,82 @@ async def get_channels_by_keyword(chat_id):
     # получаем путь к файлу с ключевыми словами
     file_channels_keywords = os.path.abspath(f'./data_dir/searching_words_channels_chat_id_{chat_id}.txt')
 
+    # получаем путь к файлу, в котором хранятся каналы
+    file_channels_json = os.path.abspath(f'./data_dir/channels_chat_id_{chat_id}.json')
+
     key_words = reading_txt(file_channels_keywords)  # получаем список ключевых слов
 
-    if len(key_words) > 1:  # если список слов существует, делаем поиск новых каналов
+    # # получаем список каналов из файла хранения
+    # # если файла еще не существует, будет создан пустой список
+    # channels_list = reading_json(file_channels_json)
+    print(len(channels_list))
 
-        key_phrase = get_key_phrase(key_words)  # получаем ключевую фразу
-        print(f"Ключевая фраза: {key_phrase}")
+    if len(key_words) > 0:  # если список слов существует, делаем поиск новых каналов
 
-        # Ищем каналы по ключевой фразе
-        result = await client(functions.contacts.SearchRequest(
-            q=key_phrase,
-            limit=10  # Можно увеличить или уменьшить лимит, однако Telegram не выдает больше 10 вариантов
-        ))
+        iter_number = len(key_words)  # получаем количество циклов проверки каналов
 
-        # print(result.stringify())
-        chat_list = result.chats  # получаем список каналов из ответа Telegram
-        print(f"Найдено каналов: {len(chat_list)}")
+        for word in key_words:
 
-        # получаем путь к файлу, в котором хранятся каналы
-        file_channels_json = os.path.abspath(f'./data_dir/channels_chat_id_{chat_id}.json')
+            iter_number -= 1  # уменьшаем количество проверок
 
-        # получаем список каналов из файла хранения
-        # если файла еще не существует, будет создан пустой список
-        channels_list = reading_json(file_channels_json)
+            # key_phrase = get_key_phrase(key_words)  # получаем ключевую фразу
+            print(f"Ключевое слово: {word}")
 
-        # перебираем список спарсенных каналов
-        for chat in chat_list:
+            # Ищем каналы по ключевому слову
+            result = await client(functions.contacts.SearchRequest(
+                q=word,
+                limit=10  # Можно увеличить или уменьшить лимит, однако Telegram не выдает больше 10 вариантов
+            ))
 
-            channel_dict = {}  # создаем словарь, в который будем складывать данные о канале
-            if chat.username:
-                chat_link = f"https://t.me/{chat.username}"  # формируем ссылку на канал, если она доступна
-            else:
-                chat_link = None
-            print(f"ID канала: {chat.id}, Название: {chat.title}, Ссылка на канал: {chat_link}")
-            channel_dict['id'] = chat.id  # id канала
-            channel_dict['title'] = chat.title  # название канала
-            channel_dict['link'] = chat_link  # ссылка на канал
+            # print(result.stringify())
+            chat_list = result.chats  # получаем список каналов из ответа Telegram
+            print(f"Найдено каналов: {len(chat_list)}")
 
-            flag = True  # устанавливаем метку добавления канала в новый список
+            # получаем список каналов из файла хранения
+            # если файла еще не существует, будет создан пустой список
+            channels_new = []  # созадаем список для новых каналов
 
-            for word in stop_words:  # проверяем наличие в названии канала стоп-слов
-                if word.lower() in chat.title.lower().split():  # если стоп-слово есть в названии канала
-                    flag = False  # устанавливаем запрет на добавление канала
+            # перебираем список спарсенных каналов
+            for chat in chat_list:
 
-            if flag:  # если метка разрешает добавление канала
+                channel_dict = {}  # создаем словарь, в который будем складывать данные о канале
+                if chat.username:
+                    chat_link = f"https://t.me/{chat.username}"  # формируем ссылку на канал, если она доступна
+                else:
+                    chat_link = None
+                print(f"ID канала: {chat.id}, Название: {chat.title}, Ссылка на канал: {chat_link}")
+                channel_dict['id'] = chat.id  # id канала
+                channel_dict['title'] = chat.title  # название канала
+                channel_dict['link'] = chat_link  # ссылка на канал
 
-                # проверяем последнее сообщение в канале
-                async for message in client.iter_messages(chat.title, limit=1):
-                    # print(message.date)
+                flag = True  # устанавливаем метку добавления канала в новый список
 
-                    # определяем давность последнего сообщения в днях от текущей даты
-                    days_difference = get_days_difference(message.date)
+                for stop_word in stop_words:  # проверяем наличие в названии канала стоп-слов
+                    if stop_word.lower() in chat.title.lower().split():  # если стоп-слово есть в названии канала
+                        flag = False  # устанавливаем запрет на добавление канала
 
-                    # проверяем давность сообщения (чтобы сообщение было опубликовано не позднее 7 дней)
-                    if days_difference <= 7:
+                if flag:  # если метка разрешает добавление канала
 
-                        if channel_dict not in channels_list:  # если канала нет в списке, добавляем в список
-                            channels_list.append(channel_dict)
+                    # проверяем последнее сообщение в канале
+                    async for message in client.iter_messages(chat.title, limit=1):
+                        # print(message.date)
+
+                        # определяем давность последнего сообщения в днях от текущей даты
+                        days_difference = get_days_difference(message.date)
+
+                        # проверяем давность сообщения (чтобы сообщение было опубликовано не позднее 7 дней)
+                        if days_difference <= 7:
+
+                            if channel_dict not in channels_list:  # если канала нет в списке, добавляем в список
+                                channels_new.append(channel_dict)
+
+            print(f'Добавлено {len(channels_new)}')
+            channels_list.extend(channels_new)
+            print(f'Всего {len(channels_list)}')
+
+            if iter_number > 0:
+                print(f'----- ожидайте ----- {iter_number}')
+                time.sleep(20)
 
         writing_json(file_channels_json, channels_list)  # сохраняем список каналов в файл в формате json
 
