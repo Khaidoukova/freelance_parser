@@ -47,8 +47,16 @@ def get_messages(chat_id):
 
     messages_list = []  # задаем список для сообщений
 
-    loop = asyncio.new_event_loop()  # создаем новый цикл событий
-    asyncio.set_event_loop(loop)  # устанавливаем цикл событий
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError as ex:
+        if "There is no current event loop in thread" in str(ex):
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+    # loop = asyncio.new_event_loop()  # создаем новый цикл событий
+    # asyncio.set_event_loop(loop)  # устанавливаем цикл событий
+    # loop = asyncio.get_event_loop()  # получаем текущий цикл событий
 
     iter_number = len(channels)  # получаем количество циклов проверки каналов
 
@@ -61,7 +69,7 @@ def get_messages(chat_id):
         offset_file = f'./data_dir/offset_channel_{channel}.txt'
 
         # задаем временной промежуток, за который производится проверка сообщений
-        offset_date = datetime.now() - timedelta(days=7)
+        offset_date = datetime.now() - timedelta(days=1)
 
         # открываем файл с датой последней проверки
         try:
@@ -102,7 +110,10 @@ async def search_messages(channel, keywords, offset_date, offset_file):
     :return: список сообщений
     """
 
-    await client.start()  # запускаем сессию клиента Telegram
+    try:
+        await client.start()  # запускаем сессию клиента Telegram
+    except RuntimeError:
+        pass
 
     all_messages = []  # задаем список для сообщений
 

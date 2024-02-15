@@ -1,5 +1,7 @@
 import asyncio
+import sys
 import time
+import nest_asyncio
 
 from telethon.sync import TelegramClient
 from telethon import functions
@@ -18,6 +20,26 @@ username = os.getenv('TELEGRAM_USERNAME')  # получаем имя польз�
 # Создаем клиент Telegram
 client = TelegramClient(username, api_id, api_hash)
 
+nest_asyncio.apply()
+
+# def main(chat_id):
+#     try:
+#         loop = asyncio.get_event_loop()
+#         try:
+#             tasks = asyncio.all_tasks(loop)
+#             for task in tasks:
+#                 task.cancel()
+#         except RuntimeError as err:
+#             sys.exit(1)
+#     except RuntimeError:
+#         loop = None
+#
+#     if loop is None:
+#         loop = asyncio.new_event_loop()
+#         asyncio.set_event_loop(loop)
+#
+#     loop = asyncio.get_event_loop()  # получаем текущий цикл событий
+
 
 def get_channels(chat_id):
     """
@@ -34,19 +56,28 @@ def get_channels(chat_id):
     channels_list = reading_json(file_channels_json)
     len_channels_list_start = len(channels_list)  # определяем начальное количество каналов
 
-    # loop = asyncio.get_event_loop()  # получаем текущий цикл событий
-    loop = asyncio.new_event_loop()  # создаем новый цикл событий
-    asyncio.set_event_loop(loop)  # устанавливаем цикл событий
+    try:
+        loop = asyncio.get_event_loop()
+        try:
+            tasks = asyncio.all_tasks(loop)
+            for task in tasks:
+                task.cancel()
+        except RuntimeError as err:
+            sys.exit(1)
+    except RuntimeError:
+        loop = None
 
-    iter_number = 1  # задаем количество циклов поиска каналов
+    if loop is None:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
-    # запускаем цикл поиска каналов, количество итераций можно изменить
-    for i in range(iter_number):
-        loop.run_until_complete(get_channels_by_keyword(chat_id, channels_list))  # запускаем цикл событий
+    loop = asyncio.get_event_loop()  # получаем текущий цикл событий
 
-        if i < iter_number - 1:
-            print('----- ожидайте -----')
-            time.sleep(20)
+    # loop = asyncio.new_event_loop()  # создаем новый цикл событий
+    # asyncio.set_event_loop(loop)  # устанавливаем цикл событий
+
+    loop.run_until_complete(get_channels_by_keyword(chat_id, channels_list))  # запускаем цикл событий
+    # get_channels_by_keyword(chat_id, channels_list)  # запускаем цикл событий
 
     channels_list = reading_json(file_channels_json)  # получаем список каналов из файла хранения
     len_channels_list_end = len(channels_list)  # определяем конечное количество каналов
@@ -55,6 +86,11 @@ def get_channels(chat_id):
 
     print(f"Добавлено {len_difference} новых каналов")
     print(f"Всего каналов в файле: {len_channels_list_end}")
+
+    # loop.stop()
+    # loop.close()
+
+    time.sleep(10)
 
     return len_difference
 
@@ -68,6 +104,7 @@ async def get_channels_by_keyword(chat_id, channels_list):
     """
 
     await client.start()  # запускаем сессию клиента Telegram
+    # await client.connect()
 
     # получаем путь к файлу с ключевыми словами
     file_channels_keywords = os.path.abspath(f'./data_dir/searching_words_channels_chat_id_{chat_id}.txt')
@@ -77,18 +114,13 @@ async def get_channels_by_keyword(chat_id, channels_list):
 
     key_words = reading_txt(file_channels_keywords)  # получаем список ключевых слов
 
-    # # получаем список каналов из файла хранения
-    # # если файла еще не существует, будет создан пустой список
-    # channels_list = reading_json(file_channels_json)
-    print(len(channels_list))
-
     if len(key_words) > 0:  # если список слов существует, делаем поиск новых каналов
 
         iter_number = len(key_words)  # получаем количество циклов проверки каналов
 
         for word in key_words:
 
-            iter_number -= 1  # уменьшаем количество проверок
+            iter_number -= 1  # уменьшаем счетчик циклов
 
             # key_phrase = get_key_phrase(key_words)  # получаем ключевую фразу
             print(f"Ключевое слово: {word}")
@@ -105,7 +137,7 @@ async def get_channels_by_keyword(chat_id, channels_list):
 
             # получаем список каналов из файла хранения
             # если файла еще не существует, будет создан пустой список
-            channels_new = []  # созадаем список для новых каналов
+            channels_new = []  # создаем список для новых каналов
 
             # перебираем список спарсенных каналов
             for chat in chat_list:
@@ -141,20 +173,21 @@ async def get_channels_by_keyword(chat_id, channels_list):
                             if channel_dict not in channels_list:  # если канала нет в списке, добавляем в список
                                 channels_new.append(channel_dict)
 
-            print(f'Добавлено {len(channels_new)}')
+            # print(f'Добавлено {len(channels_new)}')
             channels_list.extend(channels_new)
-            print(f'Всего {len(channels_list)}')
+            # print(f'Всего {len(channels_list)}')
 
-            if iter_number > 0:
-                print(f'----- ожидайте ----- {iter_number}')
-                time.sleep(20)
+            print(f'----- ожидайте ----- {iter_number}')
+            time.sleep(20)
 
         writing_json(file_channels_json, channels_list)  # сохраняем список каналов в файл в формате json
 
     else:
         print('Список ключевых слов отсутствует')
 
-    await client.disconnect()
+    await asyncio.sleep(2)
 
+    await client.disconnect()
+    # client.disconnect()
 
 # get_channels(876689099)

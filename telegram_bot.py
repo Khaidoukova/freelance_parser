@@ -36,8 +36,9 @@ bot = telebot.TeleBot(bot_token)  # создаем бота
 # ----------------------------------- конец блока -------------------------------------------
 
 
-@bot.message_handler(commands=['start', 'channels'])
+@bot.message_handler(commands=['start', 'channels', 'messages'])
 def start_bot(message):
+    print(message.text)
 
     if message.text == '/start':
         # отправляем в бот приветствие и запускам клавиатуру
@@ -62,11 +63,6 @@ def start_bot(message):
 
         bot.send_message(chat_id, f'Найдено {new_channels} новых каналов')
 
-
-@bot.message_handler(commands=['messages'])
-def get_messages(message):
-    """ Обработчик команды поиска сообщений """
-
     if message.text == '/messages':
 
         chat_id = message.chat.id  # получаем id чата
@@ -81,6 +77,7 @@ def get_messages(message):
 @bot.message_handler(commands=['display'])
 def display_messages(message):
     """ Обработчик команды вывода сообщений """
+    print(message.text)
 
     if message.text == '/display':
 
@@ -115,10 +112,11 @@ def send_message_page(message, page=1):
     # получаем путь к файлу, в котором хранятся каналы
     file_messages_json = os.path.abspath(f'./data_dir/result_messages_chat_id_{chat_id}.json')
 
-    messages = reading_json(file_messages_json)  # получаем список сообщений из файла хранения
+    messages_all = reading_json(file_messages_json)  # получаем список сообщений из файла хранения
 
     # собираем текст сообщений в список
-    messages_list = [message['message'] for message in messages]
+    messages_list = [message['message'] for message in messages_all]
+    # messages_list = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 
     paginator = InlineKeyboardPaginator(
         len(messages_list),
@@ -137,10 +135,27 @@ def send_message_page(message, page=1):
             message.chat.id,
             messages_list[page-1],
             reply_markup=paginator.markup,
-            parse_mode='Markdown'
+            parse_mode='HTML'  # использовать этот атрибут, если нужна разметка в выводимых сообщениях
+            # parse_mode='Markdown'
         )
     except IndexError:
         bot.send_message(chat_id, 'Новых сообщений нет')
+
+
+# @bot.message_handler(commands=['messages'])
+# def get_new_messages(message):
+#     """ Обработчик команды поиска сообщений """
+#     print(message.text)
+#
+#     if message.text == '/messages':
+#
+#         chat_id = message.chat.id  # получаем id чата
+#
+#         bot.send_message(chat_id, 'Начинаю поиск новых сообщений\nОжидайте ...')
+#
+#         messages_number = get_messages(chat_id)  # запускаем поиск сообщений
+#
+#         bot.send_message(chat_id, f'Найдено {messages_number} новых сообщений')
 
 
 @bot.message_handler(content_types=['document'])
@@ -181,5 +196,5 @@ def receive_document_from_bot(message):
         bot.send_message(message.chat.id, 'Файл не получен, вероятно вы где-то ошиблись')
 
 
-# bot.polling(non_stop=True)  # команда, чтобы бот не отключался
-bot.infinity_polling()  # команда, чтобы бот не отключался
+bot.polling(non_stop=True)  # команда, чтобы бот не отключался
+# bot.infinity_polling()  # команда, чтобы бот не отключался
