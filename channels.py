@@ -22,24 +22,6 @@ client = TelegramClient(username, api_id, api_hash)
 
 nest_asyncio.apply()
 
-# def main(chat_id):
-#     try:
-#         loop = asyncio.get_event_loop()
-#         try:
-#             tasks = asyncio.all_tasks(loop)
-#             for task in tasks:
-#                 task.cancel()
-#         except RuntimeError as err:
-#             sys.exit(1)
-#     except RuntimeError:
-#         loop = None
-#
-#     if loop is None:
-#         loop = asyncio.new_event_loop()
-#         asyncio.set_event_loop(loop)
-#
-#     loop = asyncio.get_event_loop()  # получаем текущий цикл событий
-
 
 def get_channels(chat_id):
     """
@@ -71,7 +53,7 @@ def get_channels(chat_id):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-    loop = asyncio.get_event_loop()  # получаем текущий цикл событий
+    # loop = asyncio.get_event_loop()  # получаем текущий цикл событий
 
     # loop = asyncio.new_event_loop()  # создаем новый цикл событий
     # asyncio.set_event_loop(loop)  # устанавливаем цикл событий
