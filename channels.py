@@ -170,6 +170,5 @@ async def get_channels_by_keyword(chat_id, channels_list):
     await asyncio.sleep(2)
 
     await client.disconnect()
-    # client.disconnect()
 
 # get_channels(876689099)
