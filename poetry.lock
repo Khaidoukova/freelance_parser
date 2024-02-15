@@ -122,6 +122,17 @@ files = [
 ]
 
 [[package]]
+name = "nest-asyncio"
+version = "1.6.0"
+description = "Patch asyncio to allow nested event loops"
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "nest_asyncio-1.6.0-py3-none-any.whl", hash = "sha256:87af6efd6b5e897c81050477ef65c62e2b2f35d51703cae01aff2905b1852e1c"},
+    {file = "nest_asyncio-1.6.0.tar.gz", hash = "sha256:6f172d5449aca15afd6c646851f4e31e02c598d553a667e38cafa997cfec55fe"},
+]
+
+[[package]]
 name = "pyaes"
 version = "1.6.1"
 description = "Pure-Python Implementation of the AES block-cipher and common modes of operation"
@@ -274,4 +285,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "c71d20ba9da442e58f312fccf1c8691abb37ead6401624ed0d436af95887ff3b"
+content-hash = "436b8c11b035ce7621297f2b2d5a310ee8c3801a2fbdad4fc03e00201869cde0"

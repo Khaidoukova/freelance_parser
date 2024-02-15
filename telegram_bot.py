@@ -17,6 +17,7 @@ bot = telebot.TeleBot(bot_token)  # создаем бота
 
 
 # --------------- эта часть кода запускается один раз для формирования меню ----------------
+# -----------------после запуска кода остановить бот, закомментировать код -----------------
 
 # @bot.message_handler()
 # def send_welcome(message: telebot.types.Message):
@@ -27,6 +28,7 @@ bot = telebot.TeleBot(bot_token)  # создаем бота
 #
 # bot.set_my_commands([
 #     telebot.types.BotCommand("start", "Запуск бота"),
+#     telebot.types.BotCommand("display", "Вывести последние сообщения"),
 #     telebot.types.BotCommand("messages", "Поиск сообщений"),
 #     telebot.types.BotCommand("channels", "Поиск каналов")
 # ])
@@ -34,18 +36,21 @@ bot = telebot.TeleBot(bot_token)  # создаем бота
 # ----------------------------------- конец блока -------------------------------------------
 
 
-@bot.message_handler(commands=['start', 'channels'])
+@bot.message_handler(commands=['start', 'channels', 'messages'])
 def start_bot(message):
+    print(message.text)
 
     if message.text == '/start':
         # отправляем в бот приветствие и запускам клавиатуру
         bot.send_message(message.chat.id, 'Привет, {0.first_name}!'.format(message.from_user))
-        bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска каналов, '
-                                          'отправьте боту сообщение с текстом "1" и '
-                                          'прикрепите файл в формате txt со списком ключевых слов.')
-        bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска сообщений, '
-                                          'отправьте боту сообщение с текстом "2" и '
-                                          'прикрепите файл в формате txt со списком ключевых слов.')
+        bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска каналов,\n'
+                                          'отправьте боту файл в формате txt со списком ключевых слов.\n'
+                                          'Каждое слово должно быть на новой строке.\n'
+                                          'В описании файла поставьте цифру "1"')
+        bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска сообщений,\n'
+                                          'отправьте боту файл в формате txt со списком ключевых слов.\n'
+                                          'Каждое слово должно быть на новой строке.\n'
+                                          'В описании файла поставьте цифру "2"')
 
     if message.text == '/channels':
 
@@ -58,24 +63,29 @@ def start_bot(message):
 
         bot.send_message(chat_id, f'Найдено {new_channels} новых каналов')
 
-
-@bot.message_handler(commands=['messages'])
-def get_messages_menu(message):
-    """ Обработчик команды поиска сообщений """
-
     if message.text == '/messages':
 
         chat_id = message.chat.id  # получаем id чата
 
         bot.send_message(chat_id, 'Начинаю поиск новых сообщений\nОжидайте ...')
 
-        get_messages(chat_id)  # запускаем поиск сообщений
+        messages_number = get_messages(chat_id)  # запускаем поиск сообщений
 
-        display_messages(message)  # Запускаем вывод сообщений в чат
+        bot.send_message(chat_id, f'Найдено {messages_number} новых сообщений')
+
+
+@bot.message_handler(commands=['display'])
+def display_messages(message):
+    """ Обработчик команды вывода сообщений """
+    print(message.text)
+
+    if message.text == '/display':
+
+        send_messages(message)  # Запускаем вывод сообщений в чат
 
 
 @bot.message_handler(func=lambda message: True)
-def display_messages(message):
+def send_messages(message):
     """ Вывод сообщений в чат """
 
     send_message_page(message)
@@ -102,10 +112,11 @@ def send_message_page(message, page=1):
     # получаем путь к файлу, в котором хранятся каналы
     file_messages_json = os.path.abspath(f'./data_dir/result_messages_chat_id_{chat_id}.json')
 
-    messages = reading_json(file_messages_json)  # получаем список сообщений из файла хранения
+    messages_all = reading_json(file_messages_json)  # получаем список сообщений из файла хранения
 
     # собираем текст сообщений в список
-    messages_list = [message['message'] for message in messages]
+    messages_list = [message['message'] for message in messages_all]
+    # messages_list = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 
     paginator = InlineKeyboardPaginator(
         len(messages_list),
@@ -124,10 +135,27 @@ def send_message_page(message, page=1):
             message.chat.id,
             messages_list[page-1],
             reply_markup=paginator.markup,
-            parse_mode='Markdown'
+            parse_mode='HTML'  # использовать этот атрибут, если нужна разметка в выводимых сообщениях
+            # parse_mode='Markdown'
         )
     except IndexError:
         bot.send_message(chat_id, 'Новых сообщений нет')
+
+
+# @bot.message_handler(commands=['messages'])
+# def get_new_messages(message):
+#     """ Обработчик команды поиска сообщений """
+#     print(message.text)
+#
+#     if message.text == '/messages':
+#
+#         chat_id = message.chat.id  # получаем id чата
+#
+#         bot.send_message(chat_id, 'Начинаю поиск новых сообщений\nОжидайте ...')
+#
+#         messages_number = get_messages(chat_id)  # запускаем поиск сообщений
+#
+#         bot.send_message(chat_id, f'Найдено {messages_number} новых сообщений')
 
 
 @bot.message_handler(content_types=['document'])
@@ -169,3 +197,4 @@ def receive_document_from_bot(message):
 
 
 bot.polling(non_stop=True)  # команда, чтобы бот не отключался
+# bot.infinity_polling()  # команда, чтобы бот не отключался
