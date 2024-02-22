@@ -15,6 +15,11 @@ bot_token = os.getenv('TELEGRAM_ACCESS_TOKEN')  # получаем токен б
 
 bot = telebot.TeleBot(bot_token)  # создаем бота
 
+# dimarodeo (id = 876689099), Ali_Trofimova (id = 986959236)
+# khaidoukova (id = 559091554), GaliulinYar (id = 476890564)
+
+# id пользователей, которым разрешен доступ к сервису
+id_list = [876689099, 986959236, 559091554, 476890564]
 
 # --------------- эта часть кода запускается один раз для формирования меню ----------------
 # -----------------после запуска кода остановить бот, закомментировать код -----------------
@@ -28,9 +33,9 @@ bot = telebot.TeleBot(bot_token)  # создаем бота
 #
 # bot.set_my_commands([
 #     telebot.types.BotCommand("start", "Запуск бота"),
-#     telebot.types.BotCommand("display", "Вывести последние сообщения"),
-#     telebot.types.BotCommand("messages", "Поиск сообщений"),
-#     telebot.types.BotCommand("channels", "Поиск каналов")
+#     telebot.types.BotCommand("display", "Вывести сообщения за последний день"),
+#     telebot.types.BotCommand("messages", "Поиск новых сообщений"),
+#     telebot.types.BotCommand("channels", "Поиск новых каналов")
 # ])
 
 # ----------------------------------- конец блока -------------------------------------------
@@ -38,50 +43,53 @@ bot = telebot.TeleBot(bot_token)  # создаем бота
 
 @bot.message_handler(commands=['start', 'channels', 'messages'])
 def start_bot(message):
-    print(message.text)
 
-    if message.text == '/start':
-        # отправляем в бот приветствие и запускам клавиатуру
-        bot.send_message(message.chat.id, 'Привет, {0.first_name}!'.format(message.from_user))
-        bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска каналов,\n'
-                                          'отправьте боту файл в формате txt со списком ключевых слов.\n'
-                                          'Каждое слово должно быть на новой строке.\n'
-                                          'В описании файла поставьте цифру "1"')
-        bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска сообщений,\n'
-                                          'отправьте боту файл в формате txt со списком ключевых слов.\n'
-                                          'Каждое слово должно быть на новой строке.\n'
-                                          'В описании файла поставьте цифру "2"')
+    chat_id = message.chat.id  # получаем id чата
 
-    if message.text == '/channels':
+    if chat_id in id_list:
 
-        chat_id = message.chat.id  # получаем id чата
+        if message.text == '/start':
+            # отправляем в бот приветствие и запускам клавиатуру
+            bot.send_message(message.chat.id, 'Привет, {0.first_name}!'.format(message.from_user))
+            bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска каналов,\n'
+                                              'отправьте боту файл в формате txt со списком ключевых слов.\n'
+                                              'Каждое слово должно быть на новой строке.\n'
+                                              'В описании файла поставьте цифру "1"')
+            bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска сообщений,\n'
+                                              'отправьте боту файл в формате txt со списком ключевых слов.\n'
+                                              'Каждое слово должно быть на новой строке.\n'
+                                              'В описании файла поставьте цифру "2"')
 
-        bot.send_message(chat_id, 'Ожидайте, идет поиск...')
+        if message.text == '/channels':
 
-        # запускается поиск Telegram каналов
-        new_channels = get_channels(chat_id)
+            bot.send_message(chat_id, 'Ожидайте, идет поиск...')
 
-        bot.send_message(chat_id, f'Найдено {new_channels} новых каналов')
+            # запускается поиск Telegram каналов
+            new_channels = get_channels(chat_id)
 
-    if message.text == '/messages':
+            bot.send_message(chat_id, f'Найдено {new_channels} новых каналов')
 
-        chat_id = message.chat.id  # получаем id чата
+        if message.text == '/messages':
 
-        bot.send_message(chat_id, 'Начинаю поиск новых сообщений\nОжидайте ...')
+            bot.send_message(chat_id, 'Начинаю поиск новых сообщений\nОжидайте ...')
 
-        messages_number = get_messages(chat_id)  # запускаем поиск сообщений
+            messages_number = get_messages(chat_id)  # запускаем поиск сообщений
 
-        bot.send_message(chat_id, f'Найдено {messages_number} новых сообщений')
+            bot.send_message(chat_id, f'Найдено {messages_number} новых сообщений')
+
+    else:
+        bot.send_message(chat_id, 'К сожалению вам сервис недоступен')
 
 
 @bot.message_handler(commands=['display'])
 def display_messages(message):
     """ Обработчик команды вывода сообщений """
-    print(message.text)
 
-    if message.text == '/display':
+    if message.chat.id in id_list:
 
-        send_messages(message)  # Запускаем вывод сообщений в чат
+        if message.text == '/display':
+
+            send_messages(message)  # Запускаем вывод сообщений в чат
 
 
 @bot.message_handler(func=lambda message: True)
@@ -140,22 +148,6 @@ def send_message_page(message, page=1):
         )
     except IndexError:
         bot.send_message(chat_id, 'Новых сообщений нет')
-
-
-# @bot.message_handler(commands=['messages'])
-# def get_new_messages(message):
-#     """ Обработчик команды поиска сообщений """
-#     print(message.text)
-#
-#     if message.text == '/messages':
-#
-#         chat_id = message.chat.id  # получаем id чата
-#
-#         bot.send_message(chat_id, 'Начинаю поиск новых сообщений\nОжидайте ...')
-#
-#         messages_number = get_messages(chat_id)  # запускаем поиск сообщений
-#
-#         bot.send_message(chat_id, f'Найдено {messages_number} новых сообщений')
 
 
 @bot.message_handler(content_types=['document'])

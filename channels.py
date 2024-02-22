@@ -5,6 +5,7 @@ import nest_asyncio
 
 from telethon.sync import TelegramClient
 from telethon import functions
+from telethon.tl.functions.users import GetFullUserRequest
 from dotenv import load_dotenv
 import os
 
@@ -171,4 +172,19 @@ async def get_channels_by_keyword(chat_id, channels_list):
 
     await client.disconnect()
 
+
+# ---------------------- получение id пользователя по его @nickname --------------------
+
+async def get_user_id(user_nickname):
+    await client.start()  # запускаем сессию клиента Telegram
+
+    user_info = await client(GetFullUserRequest(user_nickname))
+    user_data = user_info.full_user
+    user_id = user_data.id
+    await client.disconnect()
+    return user_id
+
+# --------------------------------------------------------------------------------------
+
 # get_channels(876689099)
+# print(asyncio.run(get_user_id('GaliulinYar')))
