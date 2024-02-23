@@ -4,6 +4,27 @@ from random import randint
 import pytz
 import datetime
 
+from dotenv import load_dotenv
+import os
+import requests
+
+load_dotenv('.env')  # загружаем данные из виртуального окружения
+bot_token = os.getenv('TELEGRAM_ACCESS_TOKEN')  # получаем токен бота
+
+
+def send_message_to_bot(chat_id, message):
+    """ Функция отправки сообщения в телеграм-бот
+    chat_id: id чата
+    message: передаваемое сообщение
+    """
+    send_message_url = f'https://api.telegram.org/bot{bot_token}/sendMessage'  # url для отправки сообщений
+
+    params = {"chat_id": chat_id, "text": message}
+
+    response = requests.get(send_message_url, params=params).json()
+
+    return response
+
 
 def writing_json(file_data, data_list):
     """ Записывает данные в формате json """
@@ -112,4 +133,21 @@ def reading_txt(file_data):
         return keywords
 
 
+def writing_log_txt(log_text, chat_id):
+    """
+    Записывает в файл лог действий пользователей
+    :param log_text: действия пользователя
+    :param chat_id: id чата пользователя с ботом
+    """
+
+    # задаем имя файла
+    file_name = os.path.abspath(f'./data_dir/log_file.txt')
+
+    date_time_now = datetime.datetime.now()  # получаем текущие дату и время
+
+    with open(file_name, 'a') as file:
+        file.write(f'{date_time_now}|{log_text}|{chat_id}\n')
+
+
 # cleaning_data(file_data_json, stop_words)
+# send_message_to_bot(876689099, 'Я перезапустился')

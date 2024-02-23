@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 import os
 
 from datas import stop_words
-from services import writing_json, reading_json, get_key_phrase, get_days_difference, reading_txt
+from services import writing_json, reading_json, get_key_phrase, get_days_difference, reading_txt, writing_log_txt
 
 load_dotenv('.env')  # загружаем данные из виртуального окружения
 
@@ -28,8 +28,11 @@ def get_channels(chat_id):
     """
     Функция поиска каналов
     :param chat_id: id чата бота с пользователем
-    :return:
+    :return: len_difference: количество найденных новых каналов
     """
+
+    # записываем в лог-файл информацию о событии
+    writing_log_txt('Запуск поиска новых каналов /channels', chat_id)
 
     # получаем путь к файлу, в котором хранятся каналы
     file_channels_json = os.path.abspath(f'./data_dir/channels_chat_id_{chat_id}.json')
@@ -74,6 +77,9 @@ def get_channels(chat_id):
     # loop.close()
 
     time.sleep(10)
+
+    # записываем в лог-файл информацию о событии
+    writing_log_txt('Поиск новых каналов завершен', chat_id)
 
     return len_difference
 
@@ -184,7 +190,9 @@ async def get_user_id(user_nickname):
     await client.disconnect()
     return user_id
 
+# print(asyncio.run(get_user_id('GaliulinYar')))
+
 # --------------------------------------------------------------------------------------
 
 # get_channels(876689099)
-# print(asyncio.run(get_user_id('GaliulinYar')))
+
