@@ -141,13 +141,39 @@ def writing_log_txt(log_text, chat_id):
     """
 
     # задаем имя файла
-    file_name = os.path.abspath(f'./data_dir/log_file.txt')
+    log_file = os.path.abspath(f'./data_dir/log_file.txt')
 
     date_time_now = datetime.datetime.now()  # получаем текущие дату и время
 
-    with open(file_name, 'a') as file:
+    # записываем данные в файл
+    with open(log_file, 'a') as file:
         file.write(f'{date_time_now}|{log_text}|{chat_id}\n')
+
+
+def reading_log_txt():
+    """ Считывает данные лог файла """
+
+    # задаем имя файла
+    log_file = os.path.abspath(f'./data_dir/log_file.txt')
+
+    # считываем последние 20 действий пользователей
+    try:
+        with open(log_file, 'r') as file:
+            log_lines = file.read().splitlines()
+            last_lines = log_lines[-20:]
+    except FileNotFoundError:
+        pass
+
+    # проверяем размер лог файла, если записей больше 200, оставляем последние 100 записей
+    if len(log_lines) > 200:
+        with open(log_file, 'w') as file:
+            file.write('\n'.join(log_lines[-100:]))
+            file.write('\n')
+
+    return last_lines
 
 
 # cleaning_data(file_data_json, stop_words)
 # send_message_to_bot(876689099, 'Я перезапустился')
+# a = reading_log_txt()
+# print(len(a))
