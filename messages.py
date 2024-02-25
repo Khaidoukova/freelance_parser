@@ -9,7 +9,7 @@ import time
 from dotenv import load_dotenv
 import os
 
-from services import writing_json, reading_json, reading_txt
+from services import writing_json, reading_json, reading_txt, writing_log_txt
 
 load_dotenv('.env')  # загружаем данные из виртуального окружения
 
@@ -26,8 +26,11 @@ def get_messages(chat_id):
     """
     Поиск сообщений в каналах и запись их в файл
     :param chat_id: id чата пользователя с ботом
-    :return:
+    :return: количество новых сообщений
     """
+
+    # записываем в лог-файл информацию о событии
+    writing_log_txt('Запуск поиска новых сообщений /messages', chat_id)
 
     # задаем имя файла, в котором будут храниться сообщения для пользователя
     result_file = f'./data_dir/result_messages_chat_id_{chat_id}.json'
@@ -104,7 +107,10 @@ def get_messages(chat_id):
     writing_json(result_file, messages_list)  # сохраняем список сообщений в файл в формате json
     print('Поиск закончен')
 
-    time.sleep(2)
+    time.sleep(10)
+
+    # записываем в лог-файл информацию о событии
+    writing_log_txt('Поиск новых сообщений завершен', chat_id)
 
     return len(messages_list)
 

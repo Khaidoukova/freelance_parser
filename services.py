@@ -4,6 +4,27 @@ from random import randint
 import pytz
 import datetime
 
+from dotenv import load_dotenv
+import os
+import requests
+
+load_dotenv('.env')  # загружаем данные из виртуального окружения
+bot_token = os.getenv('TELEGRAM_ACCESS_TOKEN')  # получаем токен бота
+
+
+def send_message_to_bot(chat_id, message):
+    """ Функция отправки сообщения в телеграм-бот
+    chat_id: id чата
+    message: передаваемое сообщение
+    """
+    send_message_url = f'https://api.telegram.org/bot{bot_token}/sendMessage'  # url для отправки сообщений
+
+    params = {"chat_id": chat_id, "text": message}
+
+    response = requests.get(send_message_url, params=params).json()
+
+    return response
+
 
 def writing_json(file_data, data_list):
     """ Записывает данные в формате json """
@@ -46,7 +67,7 @@ def get_key_phrase(words_list):
     return key_phrase
 
 
-def get_days_difference(date_time):
+def get_time_difference(date_time):
     """ Считает разницу между текущей датой и полученной датой в днях """
 
     desired_timezone = pytz.timezone('Europe/Moscow')  # устанавливаем часовой пояс
@@ -55,10 +76,11 @@ def get_days_difference(date_time):
     time_now = date_time_now.astimezone(desired_timezone)  # текущее время с учетом часового пояса
     time_received = date_time.astimezone(desired_timezone)  # время полученное с учетом часового пояса
 
-    # считаем разницу между текущей датой и полученной датой в днях
-    days_difference = (time_now.date() - time_received.date()).days
+    # считаем разницу между текущей датой и полученной датой
+    # days_difference = (time_now.date() - time_received.date()).days
+    time_difference = time_now.date() - time_received.date()
 
-    return days_difference
+    return time_difference
 
 
 def cleaning_data(file_data, words_list):
@@ -112,4 +134,75 @@ def reading_txt(file_data):
         return keywords
 
 
+def writing_log_txt(log_text, chat_id):
+    """
+    Записывает в файл лог действий пользователей
+    :param log_text: действия пользователя
+    :param chat_id: id чата пользователя с ботом
+    """
+
+    # задаем имя файла
+    log_file = os.path.abspath(f'./data_dir/log_file.txt')
+
+    date_time_now = datetime.datetime.now()  # получаем текущие дату и время
+
+    # записываем данные в файл
+    with open(log_file, 'a') as file:
+        file.write(f'{date_time_now}|{log_text}|{chat_id}\n')
+
+
+def reading_log_txt():
+    """ Считывает данные лог файла """
+
+    # задаем имя файла
+    log_file = os.path.abspath(f'./data_dir/log_file.txt')
+
+    # считываем последние 20 действий пользователей
+    try:
+        with open(log_file, 'r') as file:
+            log_lines = file.read().splitlines()
+            last_lines = log_lines[-20:]
+    except FileNotFoundError:
+        pass
+
+    # проверяем размер лог файла, если записей больше 200, оставляем последние 100 записей
+    if len(log_lines) > 200:
+        with open(log_file, 'w') as file:
+            file.write('\n'.join(log_lines[-100:]))
+            file.write('\n')
+
+    return last_lines
+
+
+def checking_bot_status():
+    """ Проверяет последнее использование бота пользователями перед рестартом.
+     Если последние 5 минут ботом пользовались, то в случае рестарта
+     пользователям будет об этом сообщено """
+
+    # получаем последние действия пользователей
+    log_list = reading_log_txt()
+
+    # получаем дату и время последней записи
+    last_action = log_list[-1].split('|')[0]
+
+    # преобразуем строку в формат datetime
+    last_action_time = datetime.datetime.strptime(last_action, '%Y-%m-%d %H:%M:%S.%f')
+
+    # определяем разницу по времени между последним действием пользователя текущим временем в минутах
+    time_difference = (get_time_difference(last_action_time)).total_seconds() / 60
+
+    # если с момента последних действий пользователя прошло меньше 5 минут
+    if time_difference < 5:
+
+        # получаем id пользователей, которые пользовались ботом
+        users_id = set([log.split('|')[-1] for log in log_list])
+
+        # отправляем пользователям сообщение о рестарте бота
+        for user in users_id:
+            send_message_to_bot(int(user),
+                                'К сожалению, по техническим причинам я перезагрузился')
+
+
 # cleaning_data(file_data_json, stop_words)
+
+checking_bot_status()

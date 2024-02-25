@@ -1,13 +1,14 @@
 import os
 
 import telebot
+from telebot.types import InlineKeyboardButton
 
 from telegram_bot_pagination import InlineKeyboardPaginator
 from dotenv import load_dotenv
 
 from channels import get_channels
 from messages import get_messages
-from services import writing_txt, reading_json
+from services import writing_txt, reading_json, writing_log_txt
 
 load_dotenv('.env')  # загружаем данные из виртуального окружения
 
@@ -15,6 +16,11 @@ bot_token = os.getenv('TELEGRAM_ACCESS_TOKEN')  # получаем токен б
 
 bot = telebot.TeleBot(bot_token)  # создаем бота
 
+# dimarodeo (id = 876689099), Ali_Trofimova (id = 986959236)
+# khaidoukova (id = 559091554), GaliulinYar (id = 476890564)
+
+# id пользователей, которым разрешен доступ к сервису
+id_list = [876689099, 986959236, 559091554, 476890564]
 
 # --------------- эта часть кода запускается один раз для формирования меню ----------------
 # -----------------после запуска кода остановить бот, закомментировать код -----------------
@@ -28,9 +34,9 @@ bot = telebot.TeleBot(bot_token)  # создаем бота
 #
 # bot.set_my_commands([
 #     telebot.types.BotCommand("start", "Запуск бота"),
-#     telebot.types.BotCommand("display", "Вывести последние сообщения"),
-#     telebot.types.BotCommand("messages", "Поиск сообщений"),
-#     telebot.types.BotCommand("channels", "Поиск каналов")
+#     telebot.types.BotCommand("display", "Вывести сообщения за последний день"),
+#     telebot.types.BotCommand("messages", "Поиск новых сообщений"),
+#     telebot.types.BotCommand("channels", "Поиск новых каналов")
 # ])
 
 # ----------------------------------- конец блока -------------------------------------------
@@ -38,50 +44,60 @@ bot = telebot.TeleBot(bot_token)  # создаем бота
 
 @bot.message_handler(commands=['start', 'channels', 'messages'])
 def start_bot(message):
-    print(message.text)
 
-    if message.text == '/start':
-        # отправляем в бот приветствие и запускам клавиатуру
-        bot.send_message(message.chat.id, 'Привет, {0.first_name}!'.format(message.from_user))
-        bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска каналов,\n'
-                                          'отправьте боту файл в формате txt со списком ключевых слов.\n'
-                                          'Каждое слово должно быть на новой строке.\n'
-                                          'В описании файла поставьте цифру "1"')
-        bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска сообщений,\n'
-                                          'отправьте боту файл в формате txt со списком ключевых слов.\n'
-                                          'Каждое слово должно быть на новой строке.\n'
-                                          'В описании файла поставьте цифру "2"')
+    chat_id = message.chat.id  # получаем id чата
 
-    if message.text == '/channels':
+    if chat_id in id_list:
 
-        chat_id = message.chat.id  # получаем id чата
+        if message.text == '/start':
 
-        bot.send_message(chat_id, 'Ожидайте, идет поиск...')
+            # записываем в лог-файл информацию о событии
+            writing_log_txt('Запуск бота /start', chat_id)
 
-        # запускается поиск Telegram каналов
-        new_channels = get_channels(chat_id)
+            # отправляем в бот приветствие и запускам клавиатуру
+            bot.send_message(message.chat.id, 'Привет, {0.first_name}!'.format(message.from_user))
+            bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска каналов,\n'
+                                              'отправьте боту файл в формате txt со списком ключевых фраз.\n'
+                                              'Каждая фраза должна быть на новой строке.\n'
+                                              'В описании файла поставьте цифру "1"')
+            bot.send_message(message.chat.id, 'Чтобы загрузить ключевые слова для поиска сообщений,\n'
+                                              'отправьте боту файл в формате txt со списком ключевых фраз.\n'
+                                              'Каждая фраза должна быть на новой строке.\n'
+                                              'В описании файла поставьте цифру "2"')
 
-        bot.send_message(chat_id, f'Найдено {new_channels} новых каналов')
+        if message.text == '/channels':
 
-    if message.text == '/messages':
+            bot.send_message(chat_id, 'Начинаю поиск новых каналов\nМожет занять продолжительное время...')
 
-        chat_id = message.chat.id  # получаем id чата
+            # запускается поиск Telegram каналов
+            new_channels = get_channels(chat_id)
 
-        bot.send_message(chat_id, 'Начинаю поиск новых сообщений\nОжидайте ...')
+            bot.send_message(chat_id, f'Найдено {new_channels} новых каналов')
 
-        messages_number = get_messages(chat_id)  # запускаем поиск сообщений
+        if message.text == '/messages':
 
-        bot.send_message(chat_id, f'Найдено {messages_number} новых сообщений')
+            bot.send_message(chat_id, 'Начинаю поиск новых сообщений\nМожет занять продолжительное время...')
+
+            messages_number = get_messages(chat_id)  # запускаем поиск сообщений
+
+            bot.send_message(chat_id, f'Найдено {messages_number} новых сообщений')
+
+    else:
+        bot.send_message(chat_id, 'К сожалению вам сервис недоступен')
 
 
 @bot.message_handler(commands=['display'])
 def display_messages(message):
     """ Обработчик команды вывода сообщений """
-    print(message.text)
 
-    if message.text == '/display':
+    if message.chat.id in id_list:
 
-        send_messages(message)  # Запускаем вывод сообщений в чат
+        if message.text == '/display':
+
+            # записываем в лог-файл информацию о событии
+            writing_log_txt('Вывод последних сообщений /display', message.chat.id)
+
+            send_messages(message)  # Запускаем вывод сообщений в чат
 
 
 @bot.message_handler(func=lambda message: True)
@@ -128,7 +144,7 @@ def send_message_page(message, page=1):
     #     InlineKeyboardButton('Like', callback_data='like#{}'.format(page)),
     #     InlineKeyboardButton('Dislike', callback_data='dislike#{}'.format(page))
     # )
-    # paginator.add_after(InlineKeyboardButton('Go back', callback_data='back'))
+    paginator.add_after(InlineKeyboardButton('Жми', callback_data='press'))
 
     try:
         bot.send_message(
@@ -142,20 +158,10 @@ def send_message_page(message, page=1):
         bot.send_message(chat_id, 'Новых сообщений нет')
 
 
-# @bot.message_handler(commands=['messages'])
-# def get_new_messages(message):
-#     """ Обработчик команды поиска сообщений """
-#     print(message.text)
-#
-#     if message.text == '/messages':
-#
-#         chat_id = message.chat.id  # получаем id чата
-#
-#         bot.send_message(chat_id, 'Начинаю поиск новых сообщений\nОжидайте ...')
-#
-#         messages_number = get_messages(chat_id)  # запускаем поиск сообщений
-#
-#         bot.send_message(chat_id, f'Найдено {messages_number} новых сообщений')
+@bot.callback_query_handler(func=lambda callback: callback.data)
+def edit_channel(callback):
+    if callback.data == 'press':
+        print(callback.message.text)
 
 
 @bot.message_handler(content_types=['document'])
@@ -163,6 +169,9 @@ def receive_document_from_bot(message):
     """ Сохранение файла с ключевыми словами в формате txt, который передал пользователь """
 
     chat_id = message.chat.id  # получаем id чата
+
+    # записываем в лог-файл информацию о событии
+    writing_log_txt('Загрузка файла с ключевыми фразами', chat_id)
 
     # получаем информацию о файле, переданном пользователем
     file_info = bot.get_file(message.document.file_id)
@@ -197,4 +206,3 @@ def receive_document_from_bot(message):
 
 
 bot.polling(non_stop=True)  # команда, чтобы бот не отключался
-# bot.infinity_polling()  # команда, чтобы бот не отключался
