@@ -67,7 +67,7 @@ def get_key_phrase(words_list):
     return key_phrase
 
 
-def get_days_difference(date_time):
+def get_time_difference(date_time):
     """ Считает разницу между текущей датой и полученной датой в днях """
 
     desired_timezone = pytz.timezone('Europe/Moscow')  # устанавливаем часовой пояс
@@ -76,10 +76,11 @@ def get_days_difference(date_time):
     time_now = date_time_now.astimezone(desired_timezone)  # текущее время с учетом часового пояса
     time_received = date_time.astimezone(desired_timezone)  # время полученное с учетом часового пояса
 
-    # считаем разницу между текущей датой и полученной датой в днях
-    days_difference = (time_now.date() - time_received.date()).days
+    # считаем разницу между текущей датой и полученной датой
+    # days_difference = (time_now.date() - time_received.date()).days
+    time_difference = time_now.date() - time_received.date()
 
-    return days_difference
+    return time_difference
 
 
 def cleaning_data(file_data, words_list):
@@ -173,7 +174,35 @@ def reading_log_txt():
     return last_lines
 
 
+def checking_bot_status():
+    """ Проверяет последнее использование бота пользователями перед рестартом.
+     Если последние 5 минут ботом пользовались, то в случае рестарта
+     пользователям будет об этом сообщено """
+
+    # получаем последние действия пользователей
+    log_list = reading_log_txt()
+
+    # получаем дату и время последней записи
+    last_action = log_list[-1].split('|')[0]
+
+    # преобразуем строку в формат datetime
+    last_action_time = datetime.datetime.strptime(last_action, '%Y-%m-%d %H:%M:%S.%f')
+
+    # определяем разницу по времени между последним действием пользователя текущим временем в минутах
+    time_difference = (get_time_difference(last_action_time)).total_seconds() / 60
+
+    # если с момента последних действий пользователя прошло меньше 5 минут
+    if time_difference < 5:
+
+        # получаем id пользователей, которые пользовались ботом
+        users_id = set([log.split('|')[-1] for log in log_list])
+
+        # отправляем пользователям сообщение о рестарте бота
+        for user in users_id:
+            send_message_to_bot(int(user),
+                                'К сожалению, по техническим причинам я перезагрузился')
+
+
 # cleaning_data(file_data_json, stop_words)
-# send_message_to_bot(876689099, 'Я перезапустился')
-# a = reading_log_txt()
-# print(len(a))
+
+checking_bot_status()

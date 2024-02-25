@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 import os
 
 from datas import stop_words
-from services import writing_json, reading_json, get_key_phrase, get_days_difference, reading_txt, writing_log_txt
+from services import writing_json, reading_json, get_key_phrase, get_time_difference, reading_txt, writing_log_txt
 
 load_dotenv('.env')  # загружаем данные из виртуального окружения
 
@@ -154,7 +154,7 @@ async def get_channels_by_keyword(chat_id, channels_list):
                         # print(message.date)
 
                         # определяем давность последнего сообщения в днях от текущей даты
-                        days_difference = get_days_difference(message.date)
+                        days_difference = get_time_difference(message.date).days
 
                         # проверяем давность сообщения (чтобы сообщение было опубликовано не позднее 7 дней)
                         if days_difference <= 7:
