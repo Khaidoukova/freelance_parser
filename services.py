@@ -78,7 +78,8 @@ def get_time_difference(date_time):
 
     # считаем разницу между текущей датой и полученной датой
     # days_difference = (time_now.date() - time_received.date()).days
-    time_difference = time_now.date() - time_received.date()
+    # time_difference = time_now.date() - time_received.date()
+    time_difference = time_now - time_received
 
     return time_difference
 
@@ -185,25 +186,31 @@ def checking_bot_status():
     log_list = reading_log_txt()
 
     if len(log_list) > 0:
-        # получаем дату и время последней записи
-        last_action = log_list[-1].split('|')[0]
 
-        # преобразуем строку в формат datetime
-        last_action_time = datetime.datetime.strptime(last_action, '%Y-%m-%d %H:%M:%S.%f')
+        users_list = []  # задаем список для пользователей, которым необходимо отправить сообщение
 
-        # определяем разницу по времени между последним действием пользователя текущим временем в минутах
-        time_difference = (get_time_difference(last_action_time)).total_seconds() / 60
+        for log in log_list:
 
-        # если с момента последних действий пользователя прошло меньше 5 минут
-        if time_difference < 5:
+            # преобразуем строку в формат datetime
+            log_datetime = datetime.datetime.strptime(log.split('|')[0], '%Y-%m-%d %H:%M:%S.%f')
 
-            # получаем id пользователей, которые пользовались ботом
-            users_id = set([log.split('|')[-1] for log in log_list])
+            # определяем разницу по времени между последним действием пользователя текущим временем в минутах
+            time_difference = (get_time_difference(log_datetime)).total_seconds() / 60
 
-            # отправляем пользователям сообщение о рестарте бота
-            for user in users_id:
-                send_message_to_bot(int(user),
-                                    'К сожалению, по техническим причинам я перезагрузился')
+            # если с момента последних действий пользователя прошло меньше 5 минут
+            if time_difference < 5:
+
+                # получаем id пользователя, который пользовался ботом
+                user_id = log.split('|')[-1]
+                users_list.append(user_id)  # добавляем в список
+
+        # преобразуем список в множество, чтобы исключить повторы
+        users_for_message = set(users_list)
+
+        # отправляем пользователям сообщение о рестарте бота
+        for user in users_for_message:
+            send_message_to_bot(int(user),
+                                'К сожалению, по техническим причинам я перезагрузился')
 
 
 # cleaning_data(file_data_json, stop_words)
