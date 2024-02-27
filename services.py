@@ -162,8 +162,10 @@ def reading_log_txt():
         with open(log_file, 'r') as file:
             log_lines = file.read().splitlines()
             last_lines = log_lines[-20:]
+
     except FileNotFoundError:
-        pass
+        log_lines = []
+        last_lines = []
 
     # проверяем размер лог файла, если записей больше 200, оставляем последние 100 записей
     if len(log_lines) > 200:
@@ -182,25 +184,26 @@ def checking_bot_status():
     # получаем последние действия пользователей
     log_list = reading_log_txt()
 
-    # получаем дату и время последней записи
-    last_action = log_list[-1].split('|')[0]
+    if len(log_list) > 0:
+        # получаем дату и время последней записи
+        last_action = log_list[-1].split('|')[0]
 
-    # преобразуем строку в формат datetime
-    last_action_time = datetime.datetime.strptime(last_action, '%Y-%m-%d %H:%M:%S.%f')
+        # преобразуем строку в формат datetime
+        last_action_time = datetime.datetime.strptime(last_action, '%Y-%m-%d %H:%M:%S.%f')
 
-    # определяем разницу по времени между последним действием пользователя текущим временем в минутах
-    time_difference = (get_time_difference(last_action_time)).total_seconds() / 60
+        # определяем разницу по времени между последним действием пользователя текущим временем в минутах
+        time_difference = (get_time_difference(last_action_time)).total_seconds() / 60
 
-    # если с момента последних действий пользователя прошло меньше 5 минут
-    if time_difference < 5:
+        # если с момента последних действий пользователя прошло меньше 5 минут
+        if time_difference < 5:
 
-        # получаем id пользователей, которые пользовались ботом
-        users_id = set([log.split('|')[-1] for log in log_list])
+            # получаем id пользователей, которые пользовались ботом
+            users_id = set([log.split('|')[-1] for log in log_list])
 
-        # отправляем пользователям сообщение о рестарте бота
-        for user in users_id:
-            send_message_to_bot(int(user),
-                                'К сожалению, по техническим причинам я перезагрузился')
+            # отправляем пользователям сообщение о рестарте бота
+            for user in users_id:
+                send_message_to_bot(int(user),
+                                    'К сожалению, по техническим причинам я перезагрузился')
 
 
 # cleaning_data(file_data_json, stop_words)
