@@ -161,7 +161,7 @@ def send_message_page(message, page=1):
 @bot.callback_query_handler(func=lambda callback: callback.data)
 def edit_channel(callback):
     if callback.data == 'press':
-        print(callback.message.text)
+        print(callback.message.page)
 
 
 @bot.message_handler(content_types=['document'])

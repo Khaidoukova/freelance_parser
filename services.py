@@ -158,15 +158,21 @@ def reading_log_txt():
     # задаем имя файла
     log_file = os.path.abspath(f'./data_dir/log_file.txt')
 
-    # считываем последние 20 действий пользователей
+    # считываем последние 20 действий пользователей из лог файла
     try:
         with open(log_file, 'r') as file:
             log_lines = file.read().splitlines()
             last_lines = log_lines[-20:]
 
+    # если файла не существует, проверяем наличие директории
     except FileNotFoundError:
-        log_lines = []
-        last_lines = []
+
+        # если директории не существует, создаем ее
+        if not os.path.isdir('./data_dir'):
+            os.mkdir('./data_dir')
+
+        log_lines = []  # создаем пустой список данных лог файла
+        last_lines = []  # создаем пустой список последних данных для проверки
 
     # проверяем размер лог файла, если записей больше 200, оставляем последние 100 записей
     if len(log_lines) > 200:
