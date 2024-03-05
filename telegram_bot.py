@@ -132,6 +132,7 @@ def send_message_page(message, page=1):
 
     # собираем текст сообщений в список
     messages_list = [message['message'] for message in messages_all]
+    # print(len(messages_list))
     # messages_list = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 
     paginator = InlineKeyboardPaginator(
@@ -154,6 +155,7 @@ def send_message_page(message, page=1):
             parse_mode='HTML'  # использовать этот атрибут, если нужна разметка в выводимых сообщениях
             # parse_mode='Markdown'
         )
+
     except IndexError:
         bot.send_message(chat_id, 'Новых сообщений нет')
 
@@ -161,7 +163,7 @@ def send_message_page(message, page=1):
 @bot.callback_query_handler(func=lambda callback: callback.data)
 def edit_channel(callback):
     if callback.data == 'press':
-        print(callback.message.page)
+        print(callback.message)
 
 
 @bot.message_handler(content_types=['document'])
