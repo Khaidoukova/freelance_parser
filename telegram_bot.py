@@ -1,14 +1,14 @@
 import os
 
 import telebot
-from telebot.types import InlineKeyboardButton
+from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from telegram_bot_pagination import InlineKeyboardPaginator
 from dotenv import load_dotenv
 
 from channels import get_channels
 from messages import get_messages
-from services import writing_txt, reading_json, writing_log_txt
+from services import writing_txt, reading_json, writing_log_txt, writing_json
 
 load_dotenv('.env')  # загружаем данные из виртуального окружения
 
@@ -25,6 +25,7 @@ id_list = [876689099, 986959236, 559091554, 476890564]
 # --------------- эта часть кода запускается один раз для формирования меню ----------------
 # -----------------после запуска кода остановить бот, закомментировать код -----------------
 
+
 # @bot.message_handler()
 # def send_welcome(message: telebot.types.Message):
 #     """ Функция формирования меню бота """
@@ -36,7 +37,8 @@ id_list = [876689099, 986959236, 559091554, 476890564]
 #     telebot.types.BotCommand("start", "Запуск бота"),
 #     telebot.types.BotCommand("display", "Вывести сообщения за последний день"),
 #     telebot.types.BotCommand("messages", "Поиск новых сообщений"),
-#     telebot.types.BotCommand("channels", "Поиск новых каналов")
+#     telebot.types.BotCommand("channels", "Поиск новых каналов"),
+#     telebot.types.BotCommand("edit_ch", "Редактирование списка каналов")
 # ])
 
 # ----------------------------------- конец блока -------------------------------------------
@@ -86,6 +88,72 @@ def start_bot(message):
         bot.send_message(chat_id, 'К сожалению вам сервис недоступен')
 
 
+@bot.message_handler(commands=['edit_ch'])
+def edit_channels(message):
+    """ Обработчик команды вывода списка каналов """
+
+    chat_id = message.chat.id  # получаем id чата
+
+    if chat_id in id_list:
+
+        if message.text == '/edit_ch':
+
+            # записываем в лог-файл информацию о событии
+            writing_log_txt('Вывод списка каналов для редактирования /edit_ch', chat_id)
+
+            # путь к файлу, в котором хранятся каналы
+            file_channels_json = os.path.abspath(f'./data_dir/channels_chat_id_{chat_id}.json')
+
+            channels_list = reading_json(file_channels_json)  # получаем список сообщений из файла хранения
+
+            markup = InlineKeyboardMarkup()  # создаем клавиатуру
+
+            # выводим кнопки с каналами
+            for channel in channels_list:
+                button = InlineKeyboardButton(text=channel['title'],
+                                              callback_data='delete_channel ' + str(channel["id"]))
+                markup.add(button)
+
+            bot.send_message(message.chat.id, "Выберите канал для удаления:", reply_markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.split()[0] == 'delete_channel')
+def handle_button_click(call):
+    """ Обработчик нажатия на кнопку выбора канала для удаления """
+
+    chat_id = call.message.chat.id  # получаем id чата
+
+    # путь к файлу, в котором хранятся каналы
+    file_channels_json = os.path.abspath(f'./data_dir/channels_chat_id_{chat_id}.json')
+
+    # путь к файлу, в котором хранятся стоп каналы
+    file_stop_channels_json = os.path.abspath(f'./data_dir/stop_channels_chat_id_{chat_id}.json')
+
+    # получаем ID канала, который надо удалить
+    channel_id_to_delete = int(call.data.replace('delete_channel ', ''))
+
+    channels_list = reading_json(file_channels_json)  # получаем список каналов из файла хранения
+
+    stop_channels_list = reading_json(file_stop_channels_json)  # получаем список стоп каналов из файла хранения
+
+    # перебираем каналы
+    for channel in channels_list:
+
+        if channel['id'] == channel_id_to_delete:  # находим соответствующий канал
+
+            channels_list.remove(channel)  # удаляем канал из списка
+            stop_channels_list.append(channel)  # и добавляем его в список стоп каналов
+
+            break
+
+    writing_json(file_channels_json, channels_list)  # сохраняем список каналов в файл
+
+    writing_json(file_stop_channels_json, stop_channels_list)  # сохраняем список стоп каналов в файл
+
+    bot.send_message(chat_id, "Канал перемещен в черный список\n"
+                              "Если хотите продолжить редактирование списка, запустите процедуру заново")
+
+
 @bot.message_handler(commands=['display'])
 def display_messages(message):
     """ Обработчик команды вывода сообщений """
@@ -125,13 +193,14 @@ def send_message_page(message, page=1):
 
     chat_id = message.chat.id  # получаем id чата
 
-    # получаем путь к файлу, в котором хранятся каналы
+    # получаем путь к файлу, в котором хранятся сообщения
     file_messages_json = os.path.abspath(f'./data_dir/result_messages_chat_id_{chat_id}.json')
 
     messages_all = reading_json(file_messages_json)  # получаем список сообщений из файла хранения
 
     # собираем текст сообщений в список
     messages_list = [message['message'] for message in messages_all]
+    # print(len(messages_list))
     # messages_list = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 
     paginator = InlineKeyboardPaginator(
@@ -144,7 +213,7 @@ def send_message_page(message, page=1):
     #     InlineKeyboardButton('Like', callback_data='like#{}'.format(page)),
     #     InlineKeyboardButton('Dislike', callback_data='dislike#{}'.format(page))
     # )
-    paginator.add_after(InlineKeyboardButton('Жми', callback_data='press'))
+    # paginator.add_after(InlineKeyboardButton('Жми', callback_data='press'))
 
     try:
         bot.send_message(
@@ -154,14 +223,9 @@ def send_message_page(message, page=1):
             parse_mode='HTML'  # использовать этот атрибут, если нужна разметка в выводимых сообщениях
             # parse_mode='Markdown'
         )
+
     except IndexError:
         bot.send_message(chat_id, 'Новых сообщений нет')
-
-
-@bot.callback_query_handler(func=lambda callback: callback.data)
-def edit_channel(callback):
-    if callback.data == 'press':
-        print(callback.message.text)
 
 
 @bot.message_handler(content_types=['document'])

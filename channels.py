@@ -74,7 +74,7 @@ def get_channels(chat_id):
     print(f"Всего каналов в файле: {len_channels_list_end}")
 
     # loop.stop()
-    # loop.close()
+    loop.close()
 
     time.sleep(10)
 
@@ -100,6 +100,9 @@ async def get_channels_by_keyword(chat_id, channels_list):
 
     # получаем путь к файлу, в котором хранятся каналы
     file_channels_json = os.path.abspath(f'./data_dir/channels_chat_id_{chat_id}.json')
+
+    # путь к файлу, в котором хранятся стоп каналы
+    file_stop_channels_json = os.path.abspath(f'./data_dir/stop_channels_chat_id_{chat_id}.json')
 
     key_words = reading_txt(file_channels_keywords)  # получаем список ключевых слов
 
@@ -143,9 +146,15 @@ async def get_channels_by_keyword(chat_id, channels_list):
 
                 flag = True  # устанавливаем метку добавления канала в новый список
 
-                for stop_word in stop_words:  # проверяем наличие в названии канала стоп-слов
-                    if stop_word.lower() in chat.title.lower().split():  # если стоп-слово есть в названии канала
-                        flag = False  # устанавливаем запрет на добавление канала
+                # получаем список стоп каналов из файла хранения
+                stop_channels_list = reading_json(file_stop_channels_json)
+
+                if channel_dict in stop_channels_list:  # проверяем есть ли канал в списке стоп каналов
+                    flag = False  # устанавливаем запрет на добавление канала
+
+                # for stop_word in stop_words:  # проверяем наличие в названии канала стоп-слов
+                #     if stop_word.lower() in chat.title.lower().split():  # если стоп-слово есть в названии канала
+                #         flag = False  # устанавливаем запрет на добавление канала
 
                 if flag:  # если метка разрешает добавление канала
 
@@ -162,9 +171,7 @@ async def get_channels_by_keyword(chat_id, channels_list):
                             if channel_dict not in channels_list:  # если канала нет в списке, добавляем в список
                                 channels_new.append(channel_dict)
 
-            # print(f'Добавлено {len(channels_new)}')
             channels_list.extend(channels_new)
-            # print(f'Всего {len(channels_list)}')
 
             print(f'----- ожидайте ----- {iter_number}')
             time.sleep(20)
@@ -179,7 +186,7 @@ async def get_channels_by_keyword(chat_id, channels_list):
     await client.disconnect()
 
 
-# ---------------------- получение id пользователя по его @nickname --------------------
+# ---------------------- получение id пользователя по его @username --------------------
 
 async def get_user_id(user_nickname):
     await client.start()  # запускаем сессию клиента Telegram
