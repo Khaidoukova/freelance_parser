@@ -9,8 +9,7 @@ from telethon.tl.functions.users import GetFullUserRequest
 from dotenv import load_dotenv
 import os
 
-from datas import stop_words
-from services import writing_json, reading_json, get_key_phrase, get_time_difference, reading_txt, writing_log_txt
+from services import writing_json, reading_json, get_time_difference, reading_txt, writing_log_txt
 
 load_dotenv('.env')  # загружаем данные из виртуального окружения
 
@@ -74,7 +73,7 @@ def get_channels(chat_id):
     print(f"Всего каналов в файле: {len_channels_list_end}")
 
     # loop.stop()
-    loop.close()
+    # loop.close()
 
     time.sleep(10)
 
